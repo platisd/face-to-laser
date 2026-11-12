@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     testTimeout: 30000,
+    hookTimeout: 120000,
     server: { deps: { inline: ["@techstark/opencv-js"] } },
   },
 });
