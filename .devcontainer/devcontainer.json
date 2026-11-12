@@ -1,0 +1,16 @@
+{
+  "name": "face-to-laser",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "containerEnv": {
+    "U2NET_HOME": "${containerWorkspaceFolder}/models/rembg"
+  },
+  "forwardPorts": [7860],
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python"]
+    }
+  }
+}

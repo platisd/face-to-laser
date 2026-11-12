@@ -1,0 +1,7 @@
+[project]
+name = "face-to-laser"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
