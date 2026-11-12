@@ -4,10 +4,13 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" }
+  },
   "containerEnv": {
     "U2NET_HOME": "${containerWorkspaceFolder}/models/rembg"
   },
-  "forwardPorts": [7860],
+  "forwardPorts": [7860, 5173],
   "customizations": {
     "vscode": {
       "extensions": ["ms-python.python"]

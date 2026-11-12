@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Turns a photo of a face into files for a laser engraver. Runs in your browser." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%23b4532a%22/%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%226%22 fill=%22%23f6f3ee%22/%3E%3C/svg%3E" />
+    <title>Face to laser</title>
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>Face to laser</h1>
+      <p>Turns a photo of a face into files for a laser engraver. Your photo stays on this computer.</p>
+    </header>
+
+    <main class="layout">
+      <section class="settings-side" aria-label="Photo and settings">
+        <label class="photo-drop" id="photo-drop">
+          <input type="file" accept="image/*" id="photo-input" />
+          <img id="photo-thumb" alt="Chosen photo" hidden />
+          <span id="photo-drop-text">Choose a photo, drop it here, or paste it (Ctrl+V).</span>
+        </label>
+
+        <div class="button-row">
+          <button type="button" id="reset-button" title="Set all settings back to their first values">Reset to defaults</button>
+          <button type="button" id="save-button" title="Download the settings as a .json file">Save settings</button>
+          <button type="button" id="load-button" title="Load settings from a .json file">Load settings</button>
+          <input type="file" accept=".json,application/json" id="load-input" hidden />
+        </div>
+        <p id="settings-message" class="message" role="status"></p>
+
+        <section id="model-downloads" class="model-downloads" aria-label="Model downloads"></section>
+
+        <div id="controls"></div>
+      </section>
+
+      <section class="preview-side" aria-label="Preview and export">
+        <p id="status" class="status" role="status">Upload a photo to start.</p>
+
+        <div class="preview-options">
+          <div id="preview-modes" class="choice-row" role="radiogroup" aria-label="Preview"></div>
+          <label class="checkbox"><input type="checkbox" id="wood-colors" checked /> Wood colors</label>
+        </div>
+
+        <div class="preview-box">
+          <canvas id="preview" hidden></canvas>
+          <p id="preview-empty" class="preview-empty">The preview shows here.</p>
+          <span id="busy" class="busy" hidden>Working…</span>
+        </div>
+
+        <div class="export-row">
+          <label class="file-name">File name <input id="file-name" value="portrait" /></label>
+          <button type="button" id="export-button" class="primary" title="Download all laser files in one .zip file" disabled>
+            Export laser files
+          </button>
+        </div>
+        <p id="export-message" class="message" role="status"></p>
+
+        <details class="file-help">
+          <summary>What is in the .zip file?</summary>
+          <dl>
+            <dt>*_combined.svg</dt>
+            <dd>Picture and cut line in one file, at the right size. Try this first.</dd>
+            <dt>*_engrave.png</dt>
+            <dd>Only the picture. Black dots = burn. Has the dots per inch inside, so it opens at the right size.</dd>
+            <dt>*_cut.svg, *_cut.dxf</dt>
+            <dd>Only the cut line, as a red line. Same size and position as the picture.</dd>
+            <dt>*_settings.json</dt>
+            <dd>The settings used. Load it again with <b>Load settings</b>.</dd>
+          </dl>
+          <p>In Falcon Design Space: set the picture to <b>engrave</b> and the red line to <b>cut</b>. The speed and power for your material are set there, not here.</p>
+        </details>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
