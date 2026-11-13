@@ -48,3 +48,38 @@ test("photo to laser files", async ({ page }) => {
     ["testface_combined.svg", "testface_cut.dxf", "testface_cut.svg", "testface_engrave.png", "testface_settings.json"],
   );
 });
+
+test("crop the photo with a circle", async ({ page }) => {
+  await page.goto("./");
+  await page.locator("#photo-input").setInputFiles({ name: "made-up.png", mimeType: "image/png", buffer: await madeUpPhoto() });
+  await expect(page.locator("#status")).toContainText("Whole area:", { timeout: 120000 });
+  const applyButton = page.getByRole("button", { name: "Apply crop" });
+  await expect(applyButton).toBeDisabled();
+
+  await page.getByRole("radio", { name: "Circle" }).check();
+  const stage = page.locator("#crop-canvas");
+  await expect(stage).toBeVisible();
+  await expect(applyButton).toBeEnabled();
+
+  const area = (await stage.boundingBox())!;
+  const middle = { x: area.x + area.width / 2, y: area.y + area.height / 2 };
+  await page.mouse.move(middle.x, middle.y);
+  await page.mouse.wheel(0, -200);
+  await page.getByRole("button", { name: "Fit" }).click();
+  const frameSide = Math.min(area.width, area.height) * 0.8;
+  const corner = { x: middle.x + frameSide / 2, y: middle.y + frameSide / 2 };
+  await page.mouse.move(corner.x, corner.y);
+  await page.mouse.down();
+  await page.mouse.move(corner.x - 40, corner.y - 40, { steps: 5 });
+  await page.mouse.up();
+
+  await applyButton.click();
+  await expect(applyButton).toBeDisabled();
+  await expect(page.locator("#export-button")).toBeDisabled();
+  await expect(page.locator("#status")).toContainText("Cut piece:", { timeout: 120000 });
+  await expect(page.locator("#export-button")).toBeEnabled();
+
+  await page.getByRole("radio", { name: "No crop" }).check();
+  await expect(stage).toBeHidden();
+  await expect(applyButton).toBeEnabled();
+});

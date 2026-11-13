@@ -1,4 +1,5 @@
 import { type PartFinders, analyzePhoto } from "./analysis";
+import { type Crop, cropBoxInPixels, hideOutsideCircle } from "./crop";
 import { makeLaserFiles, zipFiles } from "./exportFiles";
 import type { FloatImage, RgbaImage } from "./images";
 import { type BilateralPool, createBilateralPool } from "./bilateralPool";
@@ -46,30 +47,32 @@ function loadModels(): Promise<PartFinders> {
   return loading;
 }
 
-async function readPhoto(photo: Blob): Promise<RgbaImage> {
-  let bitmap = await createImageBitmap(photo, { imageOrientation: "from-image", premultiplyAlpha: "none" });
-  const scale = LARGEST_PHOTO_SIDE / Math.max(bitmap.width, bitmap.height);
-  if (scale < 1) {
-    const smaller = await createImageBitmap(bitmap, {
-      resizeWidth: Math.round(bitmap.width * scale),
-      resizeHeight: Math.round(bitmap.height * scale),
-      resizeQuality: "high",
-      premultiplyAlpha: "none",
-    });
-    bitmap.close();
-    bitmap = smaller;
-  }
+async function readPhoto(photo: Blob, crop: Crop | null): Promise<RgbaImage> {
+  const whole = await createImageBitmap(photo, { imageOrientation: "from-image", premultiplyAlpha: "none" });
+  const box = crop === null ? { left: 0, top: 0, width: whole.width, height: whole.height } : cropBoxInPixels(crop, whole.width, whole.height);
+  const scale = Math.min(1, LARGEST_PHOTO_SIDE / Math.max(box.width, box.height));
+  const bitmap = await createImageBitmap(whole, box.left, box.top, box.width, box.height, {
+    resizeWidth: Math.max(1, Math.round(box.width * scale)),
+    resizeHeight: Math.max(1, Math.round(box.height * scale)),
+    resizeQuality: "high",
+    premultiplyAlpha: "none",
+  });
+  whole.close();
   const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
   const context = canvas.getContext("2d")!;
   context.drawImage(bitmap, 0, 0);
   bitmap.close();
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-  return { width: pixels.width, height: pixels.height, data: pixels.data };
+  const image = { width: pixels.width, height: pixels.height, data: pixels.data };
+  if (crop?.shape === "circle") {
+    hideOutsideCircle(image);
+  }
+  return image;
 }
 
-async function analyze(photo: Blob): Promise<PhotoAnalysis | null> {
+async function analyze(photo: Blob, crop: Crop | null): Promise<PhotoAnalysis | null> {
   try {
-    const pixels = await readPhoto(photo);
+    const pixels = await readPhoto(photo, crop);
     partFinders ??= loadModels();
     const finders = await partFinders;
     send({ kind: "analysisStarted" });
@@ -115,7 +118,7 @@ async function handle(message: MessageToWorker): Promise<void> {
   if (message.kind === "photo") {
     lastJob = null;
     jobCache = null;
-    analysis = analyze(message.photo);
+    analysis = analyze(message.photo, message.crop);
     return;
   }
   try {

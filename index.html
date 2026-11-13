@@ -32,6 +32,27 @@
           <span id="photo-drop-text">Choose a photo, drop it here, or paste it (Ctrl+V).</span>
         </label>
 
+        <section id="crop-panel" class="crop-panel" aria-label="Crop" hidden>
+          <h2>Crop</h2>
+          <div id="crop-shapes" class="choice-row" role="radiogroup" aria-label="Crop shape"></div>
+          <div id="crop-stage" class="crop-stage" hidden>
+            <canvas id="crop-canvas" aria-label="Photo with the crop frame"></canvas>
+          </div>
+          <p id="crop-help" class="crop-help" hidden>
+            Drag the frame to move it. Drag a corner to change its size. Scroll to zoom. Drag outside the frame to move the photo.
+          </p>
+          <div class="button-row">
+            <div id="crop-zoom-buttons" class="button-row" hidden>
+              <button type="button" id="crop-zoom-out-button" title="Zoom out" aria-label="Zoom out">−</button>
+              <button type="button" id="crop-zoom-in-button" title="Zoom in" aria-label="Zoom in">+</button>
+              <button type="button" id="crop-zoom-fit-button" title="Show the whole photo">Fit</button>
+            </div>
+            <button type="button" id="crop-apply-button" class="primary" title="Use this crop. The photo is looked at again." disabled>
+              Apply crop
+            </button>
+          </div>
+        </section>
+
         <div class="button-row">
           <button type="button" id="reset-button" title="Set all settings back to their first values">Reset to defaults</button>
           <button type="button" id="save-button" title="Download the settings as a .json file">Save settings</button>

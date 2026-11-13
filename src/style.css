@@ -212,6 +212,49 @@ select {
   flex: none;
 }
 
+.crop-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.crop-panel[hidden],
+.crop-panel [hidden] {
+  display: none;
+}
+
+.crop-panel h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.crop-stage {
+  height: 340px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: repeating-conic-gradient(var(--bar) 0 25%, transparent 0 50%) 0 0 / 20px 20px;
+}
+
+.crop-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.crop-help {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+#crop-apply-button {
+  margin-left: auto;
+}
+
 .model-downloads {
   display: flex;
   flex-direction: column;

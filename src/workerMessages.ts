@@ -1,3 +1,4 @@
+import type { Crop } from "./crop";
 import type { PieceSize } from "./laserJob";
 import type { DownloadProgress } from "./models";
 import type { PreviewMode, RgbaPicture } from "./preview";
@@ -5,7 +6,7 @@ import type { Settings } from "./settings";
 
 export type MessageToWorker =
   | { kind: "loadModels" }
-  | { kind: "photo"; photo: Blob }
+  | { kind: "photo"; photo: Blob; crop: Crop | null }
   | { kind: "preview"; requestId: number; settings: Settings; mode: PreviewMode; woodColors: boolean }
   | { kind: "export"; requestId: number; settings: Settings; name: string };
 

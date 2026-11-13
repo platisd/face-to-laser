@@ -22,8 +22,9 @@ Remove the background, fix the lighting and contrast, turn the picture into dots
 
 1. Open the page. The first time, it downloads some models. After that they come from the browser cache.
 2. Choose a photo (or drop or paste it).
-3. Change the settings. The preview updates by itself.
-4. Click **Export laser files**. You get one `.zip` file.
+3. If you want, crop it to a circle, rectangle or square.
+4. Change the settings. The preview updates by itself.
+5. Click **Export laser files**. You get one `.zip` file.
 
 The page remembers your last settings.<br>
 **Save settings** and **Load settings** use a `.json` file.

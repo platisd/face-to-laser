@@ -8,6 +8,8 @@ import {
   getSettingValue,
   withSettingValue,
 } from "./controls";
+import type { Crop } from "./crop";
+import { startCropEditor } from "./cropEditor";
 import { safeFileName } from "./fileNames";
 import { type DownloadProgress, MODEL_FILES, type ModelId } from "./models";
 import { newestOnly } from "./newestOnly";
@@ -37,6 +39,7 @@ export function startApp(): void {
   let analysisReady = false;
   let analysisFailed = false;
   let latestPhoto: Blob | null = null;
+  let latestCrop: Crop | null = null;
   let latestRequestId = 0;
   const modelProgress = new Map<ModelId, DownloadProgress>();
 
@@ -49,6 +52,10 @@ export function startApp(): void {
   const settingsMessage = find<HTMLParagraphElement>("settings-message");
   const woodColors = find<HTMLInputElement>("wood-colors");
   const modelPanel = find<HTMLElement>("model-downloads");
+  const cropEditor = startCropEditor((crop) => {
+    latestCrop = crop;
+    analyzeLatestPhoto();
+  });
 
   function showStatus(text: string, isError = false): void {
     status.textContent = text;
@@ -126,9 +133,7 @@ export function startApp(): void {
       return;
     }
     latestPhoto = photo;
-    analysisReady = false;
-    analysisFailed = false;
-    exportButton.disabled = true;
+    latestCrop = null;
     const thumb = find<HTMLImageElement>("photo-thumb");
     if (thumb.src) {
       URL.revokeObjectURL(thumb.src);
@@ -136,9 +141,20 @@ export function startApp(): void {
     thumb.src = URL.createObjectURL(photo);
     thumb.hidden = false;
     find<HTMLSpanElement>("photo-drop-text").textContent = "Choose another photo, drop it here, or paste it.";
+    cropEditor.showPhoto(thumb.src);
+    analyzeLatestPhoto();
+  }
+
+  function analyzeLatestPhoto(): void {
+    if (latestPhoto === null) {
+      return;
+    }
+    analysisReady = false;
+    analysisFailed = false;
+    exportButton.disabled = true;
     showStatus(allModelsReady() ? "Looking at the photo…" : "Waiting for the models to finish loading…");
     busy.hidden = false;
-    send({ kind: "photo", photo });
+    send({ kind: "photo", photo: latestPhoto, crop: latestCrop });
   }
 
   function allModelsReady(): boolean {
@@ -149,8 +165,8 @@ export function startApp(): void {
     renderModelPanel(modelPanel, modelProgress, () => {
       modelProgress.clear();
       send({ kind: "loadModels" });
-      if (latestPhoto !== null && analysisFailed) {
-        choosePhoto(latestPhoto);
+      if (analysisFailed) {
+        analyzeLatestPhoto();
       }
     });
   }
