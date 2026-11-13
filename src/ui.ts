@@ -426,16 +426,14 @@ function buildPreviewModes(container: HTMLElement, onChange: (mode: PreviewMode)
 
 function renderModelPanel(panel: HTMLElement, progress: Map<ModelId, DownloadProgress>, retry: () => void): void {
   const allReady = MODEL_FILES.every((file) => progress.get(file.id)?.state === "ready");
-  const anyFromInternet = [...progress.values()].some((item) => !item.fromCache);
   panel.replaceChildren();
-  const heading = document.createElement("h2");
-  heading.textContent = allReady ? "Models are ready" : "Loading models";
-  panel.append(heading);
-  if (allReady && !anyFromInternet) {
-    panel.hidden = true;
+  panel.hidden = allReady;
+  if (allReady) {
     return;
   }
-  panel.hidden = false;
+  const heading = document.createElement("h2");
+  heading.textContent = "Loading models";
+  panel.append(heading);
   let anyFailed = false;
   for (const file of MODEL_FILES) {
     const item = progress.get(file.id);
@@ -461,7 +459,7 @@ function renderModelPanel(panel: HTMLElement, progress: Map<ModelId, DownloadPro
     } else if (item.fromCache) {
       note.textContent = "Loaded from browser cache.";
     } else {
-      note.textContent = item.state === "ready" ? "Downloaded. Only the first time." : "Downloading. Only the first time.";
+      note.textContent = item.state === "ready" ? "Downloaded." : "Downloading.";
     }
     line.append(name, size, bar, note);
     panel.append(line);
