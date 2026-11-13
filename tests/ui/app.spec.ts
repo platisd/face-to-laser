@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import JSZip from "jszip";
-import { blackAndWhitePng } from "../../src/exportFiles";
+import { grayPng } from "../../src/exportFiles";
 
 async function madeUpPhoto(): Promise<Buffer> {
   const size = 300;
@@ -13,7 +13,7 @@ async function madeUpPhoto(): Promise<Buffer> {
       data[y * size + x] = isHead || isBody ? (x + y) % 7 === 0 ? 255 : 0 : 255;
     }
   }
-  return Buffer.from(await blackAndWhitePng({ width: size, height: size, data }, 10000));
+  return Buffer.from(await grayPng({ width: size, height: size, data }, 10000, false));
 }
 
 test("photo to laser files", async ({ page }) => {

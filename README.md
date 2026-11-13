@@ -31,14 +31,14 @@ The page remembers your last settings.<br>
 
 The `.zip` file contains:
 
-| File                     | What it is                                                                                        |
-| ------------------------ | ------------------------------------------------------------------------------------------------- |
-| `*_combined.svg`         | Picture and cut line in one file, at the right size. Try this first.                              |
-| `*_engrave.png`          | Only the picture. Black dots = burn. Has the dots per inch inside, so it opens at the right size. |
-| `*_cut.svg`, `*_cut.dxf` | Only the cut lines, in red. Same size and position as the picture.                                |
-| `*_settings.json`        | The settings used. Load it again with **Load settings**.                                          |
+| File                     | What it is                                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `*_combined.svg`         | Picture and cut line in one file, at the right size. Try this first.                                                       |
+| `*_engrave.png`          | Only the picture. Black dots = burn, the rest is see-through. Has the dots per inch inside, so it opens at the right size. |
+| `*_cut.svg`, `*_cut.dxf` | Only the cut lines: the outline in red, the keychain hole in blue. Same size and position as the picture.                  |
+| `*_settings.json`        | The settings used. Load it again with **Load settings**.                                                                   |
 
-In Falcon Design Space: set the picture to **engrave** and the red line to **cut**.
+In Falcon Design Space: set the picture to **engrave** and the red and blue lines to **cut**.
 The speed and power for your material are set there, not here.
 
 ### Keychain
@@ -48,7 +48,7 @@ Open **Keychain** and turn on **Keychain holder**.
 It adds a ring with a hole on the outline, at the top by default.
 Move it with the slider, or click the preview where you want it.
 
-The hole is a second red cut line, written before the outer one in the files.
+The hole is a blue cut line in its own layer, written before the outer one in the files.
 Cut the hole first, so the piece does not move before the hole is done.
 
 ### Software
