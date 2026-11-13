@@ -1,5 +1,6 @@
 import { type ByteImage, type FloatImage, type PointList, bytesToFloats, newFloatImage, roundLikePython } from "./images";
 import { type ToneMaps, applyTone, edgeKeepingBlur, evenOutLighting, toDots, toStencil } from "./imageSteps";
+import { type Circle, forEachPixelInCircle, holderReachMm, holeDiameterMm, keychainIsOn, placeHolder, withCircle } from "./keychain";
 import { addBorder, resizeFloatImage } from "./opencv";
 import { contourToMm, grow, keepBiggestPiece, smoothShape, solidShape } from "./outlines";
 import { AREA_NAMES, type AreaName, type Settings } from "./settings";
@@ -22,6 +23,9 @@ export interface LaserJob {
   engrave: ByteImage;
   cutLineMm: PointList | null;
   cutLinePx: PointList | null;
+  holeMm: Circle | null;
+  holePx: Circle | null;
+  holderAimFromPx: [number, number] | null;
   tone: FloatImage;
   areas: AreaMaps;
   dotsPerMm: number;
@@ -50,7 +54,7 @@ export function prepareLaserJobCache(photo: PhotoAnalysis, settings: Settings, c
   const scale = (photoWidthMm * dotsPerMm) / photo.gray.width;
   const photoWidth = roundLikePython(photo.gray.width * scale);
   const photoHeight = roundLikePython(photo.gray.height * scale);
-  const borderPx = roundLikePython(spaceAroundPhotoMm * dotsPerMm);
+  const borderPx = roundLikePython((spaceAroundPhotoMm + holderReachMm(settings)) * dotsPerMm);
 
   const canvasKey = JSON.stringify([photoWidth, photoHeight, borderPx]);
   if (cache.canvasKey !== canvasKey || cache.canvas === undefined) {
@@ -99,9 +103,18 @@ export function makeLaserJob(photo: PhotoAnalysis, settings: Settings, cache: La
 
   const smoothnessPx = settings.cut_smoothness_mm * dotsPerMm;
   const shape = solidShape(person, smoothnessPx);
-  const withOutline = grow(shape, burnedOutlineMm * dotsPerMm);
+  const holder = keychainIsOn(settings)
+    ? placeHolder(
+        grow(shape, burnedOutlineMm * dotsPerMm),
+        settings.keychain_angle_deg,
+        (settings.keychain_diameter_mm / 2) * dotsPerMm,
+        (holeDiameterMm(settings) / 2) * dotsPerMm,
+      )
+    : null;
+  const shapeWithHolder = holder === null ? shape : withCircle(shape, holder.disc);
+  const withOutline = grow(shapeWithHolder, burnedOutlineMm * dotsPerMm);
   for (let i = 0; i < engrave.data.length; i++) {
-    if (withOutline.data[i] === 1 && shape.data[i] === 0) {
+    if (withOutline.data[i] === 1 && shapeWithHolder.data[i] === 0) {
       engrave.data[i] = BURN;
       tone.data[i] = 0;
     }
@@ -109,6 +122,8 @@ export function makeLaserJob(photo: PhotoAnalysis, settings: Settings, cache: La
 
   let cutLinePx: PointList | null = null;
   let cutLineMm: PointList | null = null;
+  let holePx: Circle | null = null;
+  let holeMm: Circle | null = null;
   if (settings.cut_line_on) {
     const cutShape = smoothShape(grow(withOutline, cutGapMm * dotsPerMm), smoothnessPx);
     const insideCut = keepBiggestPiece(cutShape);
@@ -122,12 +137,27 @@ export function makeLaserJob(photo: PhotoAnalysis, settings: Settings, cache: La
     if (cutLinePx !== null) {
       cutLineMm = contourToMm(cutLinePx, dotsPerMm);
     }
+    if (holder !== null && holder.hole.radius > 0) {
+      holePx = holder.hole;
+      holeMm = {
+        x: (holePx.x + 0.5) / dotsPerMm,
+        y: (holePx.y + 0.5) / dotsPerMm,
+        radius: holePx.radius / dotsPerMm,
+      };
+      forEachPixelInCircle(engrave, holePx, (index) => {
+        engrave.data[index] = NO_BURN;
+        tone.data[index] = 1;
+      });
+    }
   }
 
   return {
     engrave,
     cutLineMm,
     cutLinePx,
+    holeMm,
+    holePx,
+    holderAimFromPx: holder?.aimFrom ?? null,
     tone,
     areas,
     dotsPerMm,

@@ -33,6 +33,11 @@ export interface Settings {
   cut_line_on: boolean;
   cut_gap_mm: number;
   cut_smoothness_mm: number;
+
+  keychain_on: boolean;
+  keychain_angle_deg: number;
+  keychain_diameter_mm: number;
+  keychain_hole_diameter_mm: number;
 }
 
 export type SimpleSettingName = Exclude<keyof Settings, "areas">;
@@ -75,6 +80,11 @@ export function defaultSettings(): Settings {
     cut_line_on: true,
     cut_gap_mm: 0.0,
     cut_smoothness_mm: 1.0,
+
+    keychain_on: false,
+    keychain_angle_deg: 0,
+    keychain_diameter_mm: 12.0,
+    keychain_hole_diameter_mm: 5.0,
   };
 }
 

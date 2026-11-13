@@ -115,6 +115,22 @@ describe("export files", () => {
     expect(pairs.at(-1)).toEqual(["0", "EOF"]);
   });
 
+  it("writes the keychain hole as a circle, before the outer cut line", async () => {
+    const { job, settings } = jobWith({ keychain_on: true });
+    const files = await makeLaserFiles(job, settings, "face");
+    const read = (end: string) => new TextDecoder().decode(files.find((file) => file.name.endsWith(end))!.content);
+    for (const svg of [read("_cut.svg"), read("_combined.svg")]) {
+      expect(svg).toMatch(/<circle cx="[\d.]+" cy="[\d.]+" r="2.500" fill="none" stroke="#ff0000"/);
+      expect(svg.indexOf("<circle")).toBeLessThan(svg.indexOf("<path"));
+    }
+    const pairs = dxfPairs(read(".dxf"));
+    const circleAt = pairs.findIndex(([code, value]) => code === "0" && value === "CIRCLE");
+    expect(circleAt).toBeGreaterThan(0);
+    expect(circleAt).toBeLessThan(pairs.findIndex(([, value]) => value === "POLYLINE"));
+    expect(pairs.slice(circleAt).find(([code]) => code === "40")![1]).toBe("2.5000");
+    expect(Number(pairs.slice(circleAt).find(([code]) => code === "20")![1])).toBeCloseTo(job.heightMm - job.holeMm!.y, 3);
+  });
+
   it("puts all files in one zip, with settings that load again", async () => {
     const { job, settings } = jobWith({ look: "stencil" });
     const files = await makeLaserFiles(job, settings, "face");

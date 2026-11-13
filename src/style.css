@@ -499,3 +499,7 @@ select {
 .file-help dd {
   margin: 0 0 0 12px;
 }
+
+.preview-box canvas.places-holder {
+  cursor: crosshair;
+}

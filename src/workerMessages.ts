@@ -19,6 +19,7 @@ export interface PreviewResult {
   dotsPerMm: number;
   piece: PieceSize | null;
   hasCutLine: boolean;
+  holderAimFrom: [number, number] | null;
   message: string;
 }
 

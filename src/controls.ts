@@ -1,3 +1,4 @@
+import { keychainIsOn } from "./keychain";
 import {
   AREA_NAMES,
   AREA_TUNING_NAMES,
@@ -65,7 +66,8 @@ export const CONTROL_GROUPS: ControlGroup[] = [
         20,
         600,
         1,
-        "The light area in the preview. The cut piece is a bit smaller: see the ruler and the sizes above the preview.",
+        "The light area in the preview. The cut piece is a bit smaller: see the ruler and the sizes above the preview. " +
+          "With a keychain holder, the area grows to make room for it.",
       ),
       slider("dots_per_mm", "Dots per mm", 4, 20, 0.5, "10 = 254 DPI. Higher means finer, but slower to burn."),
     ],
@@ -116,6 +118,31 @@ export const CONTROL_GROUPS: ControlGroup[] = [
       slider("cut_smoothness_mm", "Outline and cut line smoothness (mm)", 0, 5, 0.1),
     ],
   },
+  {
+    title: "Keychain",
+    open: false,
+    note: "Adds a ring with a hole, so the piece can hang on a key ring. Needs the cut line.",
+    controls: [
+      { kind: "checkbox", path: "keychain_on", label: "Keychain holder" },
+      slider(
+        "keychain_angle_deg",
+        "Place on the outline (degrees)",
+        0,
+        360,
+        1,
+        "0 = top, 90 = right, 180 = bottom. You can also click the preview where you want it.",
+      ),
+      slider(
+        "keychain_diameter_mm",
+        "Holder diameter (mm)",
+        5,
+        40,
+        0.5,
+        "Without the burned outline and the space before the cut line, which go around it too.",
+      ),
+      slider("keychain_hole_diameter_mm", "Hole diameter (mm)", 1, 30, 0.5, "Kept at least 3 mm smaller than the holder."),
+    ],
+  },
 ];
 
 export const ALL_CONTROLS: Control[] = CONTROL_GROUPS.flatMap((group) => group.controls);
@@ -151,6 +178,10 @@ export function controlsInUse(settings: Settings): Record<SettingPath, boolean> 
   inUse.burned_outline_mm = settings.burned_outline_on;
   inUse.cut_gap_mm = settings.cut_line_on;
   inUse.cut_smoothness_mm = settings.burned_outline_on || settings.cut_line_on;
+  inUse.keychain_on = settings.cut_line_on;
+  inUse.keychain_angle_deg = keychainIsOn(settings);
+  inUse.keychain_diameter_mm = keychainIsOn(settings);
+  inUse.keychain_hole_diameter_mm = keychainIsOn(settings);
   for (const control of ALL_CONTROLS) {
     if (isAreaPath(control.path)) {
       inUse[control.path] = settings.use_face_areas;

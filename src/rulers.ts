@@ -16,13 +16,17 @@ export function rulerStepsMm(longestSideMm: number): { labelStepMm: number; tick
   return { labelStepMm: 50, tickStepMm: 10 };
 }
 
+export function rulerSizeFor(picture: { width: number; height: number }): number {
+  return Math.max(24, Math.round(Math.max(picture.width, picture.height) / 22));
+}
+
 export function drawPictureWithRulers(
   canvas: HTMLCanvasElement,
   picture: RgbaPicture,
   dotsPerMm: number,
   colors: RulerColors,
 ): void {
-  const rulerSize = Math.max(24, Math.round(Math.max(picture.width, picture.height) / 22));
+  const rulerSize = rulerSizeFor(picture);
   const spaceForLastLabel = Math.round(rulerSize * 0.8);
   canvas.width = picture.width + rulerSize + spaceForLastLabel;
   canvas.height = picture.height + rulerSize + spaceForLastLabel;

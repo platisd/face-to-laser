@@ -35,11 +35,21 @@ The `.zip` file contains:
 | ------------------------ | ------------------------------------------------------------------------------------------------- |
 | `*_combined.svg`         | Picture and cut line in one file, at the right size. Try this first.                              |
 | `*_engrave.png`          | Only the picture. Black dots = burn. Has the dots per inch inside, so it opens at the right size. |
-| `*_cut.svg`, `*_cut.dxf` | Only the cut line, as a red line. Same size and position as the picture.                          |
+| `*_cut.svg`, `*_cut.dxf` | Only the cut lines, in red. Same size and position as the picture.                                |
 | `*_settings.json`        | The settings used. Load it again with **Load settings**.                                          |
 
 In Falcon Design Space: set the picture to **engrave** and the red line to **cut**.
 The speed and power for your material are set there, not here.
+
+### Keychain
+
+Made a fridge magnet you also want on your keys?<br>
+Open **Keychain** and turn on **Keychain holder**.
+It adds a ring with a hole on the outline, at the top by default.
+Move it with the slider, or click the preview where you want it.
+
+The hole is a second red cut line, written before the outer one in the files.
+Cut the hole first, so the piece does not move before the hole is done.
 
 ### Software
 

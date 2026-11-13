@@ -83,3 +83,27 @@ test("crop the photo with a circle", async ({ page }) => {
   await expect(stage).toBeHidden();
   await expect(applyButton).toBeEnabled();
 });
+
+test("add a keychain holder and place it by clicking the preview", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Reset to defaults" }).click();
+  await page.locator("#photo-input").setInputFiles({ name: "made-up.png", mimeType: "image/png", buffer: await madeUpPhoto() });
+  await expect(page.locator("#status")).toContainText("Cut piece:", { timeout: 120000 });
+  const pieceText = async () => (await page.locator("#status").textContent())!.match(/Cut piece: ([\d.]+) × ([\d.]+)/)!;
+  const heightWithout = Number((await pieceText())[2]);
+
+  await page.locator("summary", { hasText: "Keychain" }).click();
+  const angle = page.locator('.control[data-path="keychain_angle_deg"] input[type=number]');
+  await expect(angle).toBeDisabled();
+  await page.getByRole("checkbox", { name: "Keychain holder" }).check();
+  await expect(angle).toBeEnabled();
+  await expect.poll(async () => Number((await pieceText())[2]), { timeout: 60000 }).toBeGreaterThan(heightWithout + 5);
+
+  const preview = (await page.locator("#preview").boundingBox())!;
+  await page.mouse.click(preview.x + preview.width - 5, preview.y + preview.height * 0.55);
+  await expect.poll(async () => Number(await angle.inputValue())).toBeGreaterThan(60);
+  expect(Number(await angle.inputValue())).toBeLessThan(120);
+
+  await page.getByRole("checkbox", { name: "Cut line", exact: true }).uncheck();
+  await expect(angle).toBeDisabled();
+});

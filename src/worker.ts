@@ -139,6 +139,7 @@ async function handle(message: MessageToWorker): Promise<void> {
         dotsPerMm: job.dotsPerMm,
         piece: pieceSize(job),
         hasCutLine: job.cutLineMm !== null,
+        holderAimFrom: job.holderAimFromPx,
         message: photo.message,
       };
       send({ kind: "preview", requestId: message.requestId, result }, [picture.data.buffer]);

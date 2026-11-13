@@ -125,6 +125,15 @@ export function svgText(job: LaserJob, engravePng: Uint8Array | null): string {
         `style="image-rendering:pixelated" href="${data}" xlink:href="${data}"/>`,
     );
   }
+  // The hole comes first: many laser programs cut in file order, and the piece
+  // can move once its outer line is cut.
+  if (job.holeMm !== null) {
+    const { x, y, radius } = job.holeMm;
+    parts.push(
+      `<circle cx="${x.toFixed(3)}" cy="${y.toFixed(3)}" r="${radius.toFixed(3)}" fill="none" ` +
+        `stroke="${CUT_LINE_COLOR}" stroke-width="${CUT_LINE_WIDTH_MM}"/>`,
+    );
+  }
   if (job.cutLineMm !== null) {
     parts.push(
       `<path d="${svgPath(job.cutLineMm)}" fill="none" ` +
@@ -156,8 +165,17 @@ export function dxfText(job: LaserJob): string {
     [9, "$INSUNITS"], [70, DXF_MILLIMETERS],
     [0, "ENDSEC"],
     [0, "SECTION"], [2, "ENTITIES"],
-    [0, "POLYLINE"], [8, "0"], [62, DXF_RED], [66, 1], [10, "0.0"], [20, "0.0"], [30, "0.0"], [70, 1],
   ];
+  if (job.holeMm !== null) {
+    const { x, y, radius } = job.holeMm;
+    pairs.push(
+      [0, "CIRCLE"], [8, "0"], [62, DXF_RED],
+      [10, x.toFixed(4)], [20, (job.heightMm - y).toFixed(4)], [30, "0.0"], [40, radius.toFixed(4)],
+    );
+  }
+  pairs.push(
+    [0, "POLYLINE"], [8, "0"], [62, DXF_RED], [66, 1], [10, "0.0"], [20, "0.0"], [30, "0.0"], [70, 1],
+  );
   for (const [x, y] of job.cutLineMm ?? []) {
     pairs.push([0, "VERTEX"], [8, "0"], [10, x.toFixed(4)], [20, (job.heightMm - y).toFixed(4)], [30, "0.0"]);
   }

@@ -33,8 +33,8 @@ export interface RgbaPicture {
 
 export function makePreview(job: LaserJob, mode: PreviewMode, woodColors: boolean): RgbaPicture {
   const picture = mode === PREVIEW_AREAS ? coloredAreas(job) : paint(job, mode === PREVIEW_GRAY, woodColors);
-  if (job.cutLinePx !== null) {
-    drawCutLine(picture, job);
+  if (job.cutLinePx !== null || job.holePx !== null) {
+    drawCutLines(picture, job);
   }
   return picture;
 }
@@ -80,14 +80,21 @@ function newPicture(width: number, height: number): RgbaPicture {
   return { width, height, data: new Uint8ClampedArray(width * height * 4).fill(255) };
 }
 
-function drawCutLine(picture: RgbaPicture, job: LaserJob): void {
+function drawCutLines(picture: RgbaPicture, job: LaserJob): void {
   withMats((keep) => {
     const mat = keep(new cv.Mat(picture.height, picture.width, cv.CV_8UC4));
     mat.data.set(picture.data);
-    const contours = keep(new cv.MatVector());
-    contours.push_back(keep(contourMat(job.cutLinePx!)));
+    const color = new cv.Scalar(...CUT_LINE_COLOR, 255);
     const thickness = Math.max(1, roundLikePython(CUT_LINE_WIDTH_MM * job.dotsPerMm));
-    cv.drawContours(mat, contours, -1, new cv.Scalar(...CUT_LINE_COLOR, 255), thickness);
+    if (job.cutLinePx !== null) {
+      const contours = keep(new cv.MatVector());
+      contours.push_back(keep(contourMat(job.cutLinePx)));
+      cv.drawContours(mat, contours, -1, color, thickness);
+    }
+    if (job.holePx !== null) {
+      const center = new cv.Point(Math.round(job.holePx.x), Math.round(job.holePx.y));
+      cv.circle(mat, center, Math.round(job.holePx.radius), color, thickness, cv.LINE_AA);
+    }
     picture.data.set(mat.data);
   });
 }

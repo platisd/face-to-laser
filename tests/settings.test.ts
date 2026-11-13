@@ -14,6 +14,7 @@ describe("settings", () => {
     expect(loaded.width_mm).toBe(80);
     expect(loaded.areas.hair.contrast).toBe(1.0);
     expect(loaded.areas.eyes).toEqual(defaultSettings().areas.eyes);
+    expect(loaded.keychain_on).toBe(false);
   });
 
   it("load a file saved by the Python version", () => {
@@ -27,9 +28,16 @@ describe("settings", () => {
     expect(loaded.areas.skin).toEqual(defaultSettings().areas.skin);
   });
 
-  it("save with the same keys as the Python version", () => {
+  it("save the Python version keys first, then the newer ones", () => {
     const pythonKeys = Object.keys(JSON.parse(readFileSync("tests/files/python_settings.json", "utf8")));
-    expect(Object.keys(JSON.parse(settingsToJson(defaultSettings())))).toEqual(pythonKeys);
+    const savedKeys = Object.keys(JSON.parse(settingsToJson(defaultSettings())));
+    expect(savedKeys.slice(0, pythonKeys.length)).toEqual(pythonKeys);
+    expect(savedKeys.slice(pythonKeys.length)).toEqual([
+      "keychain_on",
+      "keychain_angle_deg",
+      "keychain_diameter_mm",
+      "keychain_hole_diameter_mm",
+    ]);
   });
 
   it("ignore values of the wrong kind", () => {

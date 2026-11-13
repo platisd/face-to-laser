@@ -36,11 +36,8 @@ export function fillHoles(shape: ByteImage): ByteImage {
   });
 }
 
-export function grow(shape: ByteImage, distancePx: number): ByteImage {
-  if (distancePx <= 0) {
-    return shape;
-  }
-  const distanceToShape = withMats((keep) => {
+export function distanceOutside(shape: ByteImage): FloatImage {
+  return withMats((keep) => {
     const outside = newByteImage(shape.width, shape.height);
     for (let i = 0; i < outside.data.length; i++) {
       outside.data[i] = 1 - shape.data[i];
@@ -49,6 +46,13 @@ export function grow(shape: ByteImage, distancePx: number): ByteImage {
     cv.distanceTransform(keep(byteMat(outside)), distances, cv.DIST_L2, cv.DIST_MASK_PRECISE, cv.CV_32F);
     return floatImageFromMat(distances);
   });
+}
+
+export function grow(shape: ByteImage, distancePx: number): ByteImage {
+  if (distancePx <= 0) {
+    return shape;
+  }
+  const distanceToShape = distanceOutside(shape);
   const grown = newByteImage(shape.width, shape.height);
   for (let i = 0; i < grown.data.length; i++) {
     grown.data[i] = distanceToShape.data[i] <= distancePx ? 1 : 0;

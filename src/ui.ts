@@ -13,7 +13,8 @@ import { startCropEditor } from "./cropEditor";
 import { safeFileName } from "./fileNames";
 import { type DownloadProgress, MODEL_FILES, type ModelId } from "./models";
 import { newestOnly } from "./newestOnly";
-import { drawPictureWithRulers } from "./rulers";
+import { drawPictureWithRulers, rulerSizeFor } from "./rulers";
+import { angleTowards } from "./keychain";
 import { PREVIEW_MODES, PREVIEW_RESULT, type PreviewMode } from "./preview";
 import { loadRememberedSettings, rememberSettings } from "./rememberedSettings";
 import { defaultSettings, settingsFromJson, settingsToJson } from "./settings";
@@ -104,10 +105,26 @@ export function startApp(): void {
   });
   woodColors.addEventListener("change", askForPreview);
 
+  let shownPreview: PreviewResult | null = null;
+  canvas.addEventListener("click", (event) => {
+    const aimFrom = shownPreview?.holderAimFrom;
+    if (!shownPreview || !aimFrom) {
+      return;
+    }
+    const box = canvas.getBoundingClientRect();
+    const rulerSize = rulerSizeFor(shownPreview.picture);
+    const x = ((event.clientX - box.left) * canvas.width) / box.width - rulerSize;
+    const y = ((event.clientY - box.top) * canvas.height) / box.height - rulerSize;
+    settings = withSettingValue(settings, "keychain_angle_deg", angleTowards(aimFrom, [x, y]));
+    settingsChanged();
+  });
+
   function showPreview(result: PreviewResult | null): void {
     if (result === null) {
       return;
     }
+    shownPreview = result;
+    canvas.classList.toggle("places-holder", result.holderAimFrom !== null);
     const pageColors = getComputedStyle(document.documentElement);
     drawPictureWithRulers(canvas, result.picture, result.dotsPerMm, {
       background: pageColors.getPropertyValue("--panel").trim() || "#ffffff",
