@@ -1,4 +1,4 @@
-import { type RgbaImage, clamp } from "./images";
+import { type FloatImage, clamp, newFloatImage } from "./images";
 
 export const CROP_CHOICES = ["none", "circle", "rectangle", "square"] as const;
 export type CropChoice = (typeof CROP_CHOICES)[number];
@@ -98,16 +98,14 @@ export function cropBoxInPixels(crop: Crop, photoWidth: number, photoHeight: num
   return { left, top, width, height };
 }
 
-export function hideOutsideCircle(image: RgbaImage): void {
-  const radius = Math.min(image.width, image.height) / 2;
-  const centerX = image.width / 2;
-  const centerY = image.height / 2;
-  for (let y = 0; y < image.height; y++) {
-    for (let x = 0; x < image.width; x++) {
-      const distance = Math.hypot(x + 0.5 - centerX, y + 0.5 - centerY);
-      const visible = clamp(radius - distance + 0.5, 0, 1);
-      const alphaIndex = (y * image.width + x) * 4 + 3;
-      image.data[alphaIndex] = Math.round(image.data[alphaIndex] * visible);
+export function circleShape(width: number, height: number): FloatImage {
+  const shape = newFloatImage(width, height);
+  const radius = Math.min(width, height) / 2;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const distance = Math.hypot(x + 0.5 - width / 2, y + 0.5 - height / 2);
+      shape.data[y * width + x] = clamp(radius - distance + 0.5, 0, 1);
     }
   }
+  return shape;
 }

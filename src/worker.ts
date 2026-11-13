@@ -1,5 +1,5 @@
 import { type PartFinders, analyzePhoto } from "./analysis";
-import { type Crop, cropBoxInPixels, hideOutsideCircle } from "./crop";
+import { type Crop, circleShape, cropBoxInPixels } from "./crop";
 import { makeLaserFiles, zipFiles } from "./exportFiles";
 import type { FloatImage, RgbaImage } from "./images";
 import { type BilateralPool, createBilateralPool } from "./bilateralPool";
@@ -63,11 +63,7 @@ async function readPhoto(photo: Blob, crop: Crop | null): Promise<RgbaImage> {
   context.drawImage(bitmap, 0, 0);
   bitmap.close();
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
-  const image = { width: pixels.width, height: pixels.height, data: pixels.data };
-  if (crop?.shape === "circle") {
-    hideOutsideCircle(image);
-  }
-  return image;
+  return { width: pixels.width, height: pixels.height, data: pixels.data };
 }
 
 async function analyze(photo: Blob, crop: Crop | null): Promise<PhotoAnalysis | null> {
@@ -76,7 +72,8 @@ async function analyze(photo: Blob, crop: Crop | null): Promise<PhotoAnalysis | 
     partFinders ??= loadModels();
     const finders = await partFinders;
     send({ kind: "analysisStarted" });
-    const result = await analyzePhoto(pixels, finders);
+    const cropShape = crop?.shape === "circle" ? circleShape(pixels.width, pixels.height) : null;
+    const result = await analyzePhoto(pixels, finders, cropShape);
     send({ kind: "analysisDone", message: result.message });
     return result;
   } catch (error) {

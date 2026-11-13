@@ -29,14 +29,18 @@ export interface PartFinders {
   findFacePoints(image: RgbaImage): [number, number][] | null;
 }
 
-export async function analyzePhoto(photo: RgbaImage, finders: PartFinders): Promise<PhotoAnalysis> {
+export async function analyzePhoto(
+  photo: RgbaImage,
+  finders: PartFinders,
+  cropShape: FloatImage | null = null,
+): Promise<PhotoAnalysis> {
   const { onWhite, visible } = putOnWhite(photo);
 
   const forPersonMap = shrinkRgba(onWhite, PERSON_MAP_MAX_SIDE);
   const foundPerson = await finders.findPerson(forPersonMap);
   const person = resizeFloatImage(foundPerson, photo.width, photo.height, true);
   for (let i = 0; i < person.data.length; i++) {
-    person.data[i] = clamp(person.data[i], 0, 1) * visible.data[i];
+    person.data[i] = clamp(person.data[i], 0, 1) * visible.data[i] * (cropShape?.data[i] ?? 1);
   }
   const messages = ["Removed the background."];
 

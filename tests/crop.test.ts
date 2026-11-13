@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boxForShape, cropBoxInPixels, hideOutsideCircle, movedBox, resizedBox, startingBox } from "../src/crop";
+import { boxForShape, circleShape, cropBoxInPixels, movedBox, resizedBox, startingBox } from "../src/crop";
 
 describe("crop", () => {
   it("starts circles and squares with equal sides in the middle of the photo", () => {
@@ -30,14 +30,12 @@ describe("crop", () => {
     expect(cropBoxInPixels(crop, 400, 801)).toEqual({ left: 100, top: 80, width: 200, height: 200 });
   });
 
-  it("hides the corners outside the circle and keeps the middle", () => {
-    const size = 20;
-    const image = { width: size, height: size, data: new Uint8ClampedArray(size * size * 4).fill(255) };
-    hideOutsideCircle(image);
-    const alphaAt = (x: number, y: number) => image.data[(y * size + x) * 4 + 3];
-    expect(alphaAt(0, 0)).toBe(0);
-    expect(alphaAt(19, 19)).toBe(0);
-    expect(alphaAt(10, 10)).toBe(255);
-    expect(alphaAt(10, 1)).toBe(255);
+  it("keeps the inside of the circle and drops the corners", () => {
+    const shape = circleShape(20, 20);
+    const at = (x: number, y: number) => shape.data[y * 20 + x];
+    expect(at(0, 0)).toBe(0);
+    expect(at(19, 19)).toBe(0);
+    expect(at(10, 10)).toBe(1);
+    expect(at(10, 1)).toBe(1);
   });
 });
