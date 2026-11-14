@@ -1,6 +1,7 @@
 import { FACE_FEATURE_POINT_GROUPS, FACE_OVAL_LINES, FACE_OVAL_POINTS } from "./facePoints";
 import { type FloatImage, type RgbaImage, clamp, newFloatImage, roundLikePython } from "./images";
 import type { AreaMaps, PhotoAnalysis } from "./laserJob";
+import type { AreaName } from "./settings";
 import {
   contourMat,
   cv,
@@ -26,7 +27,7 @@ export const SEGMENTER_OTHER = 5;
 export interface PartFinders {
   findPerson(image: RgbaImage): Promise<FloatImage>;
   findBodyParts(image: RgbaImage): FloatImage[];
-  findFacePoints(image: RgbaImage): [number, number][] | null;
+  findFaces(image: RgbaImage): [number, number][][];
 }
 
 export async function analyzePhoto(
@@ -110,14 +111,16 @@ export function cropToPerson(rgba: RgbaImage, person: FloatImage): { rgba: RgbaI
 export function findAreas(image: RgbaImage, finders: PartFinders): { areas: AreaMaps; faceFound: boolean } {
   const { width, height } = image;
   const bodyParts = bodyPartsAtSize(finders, image);
-  const facePoints = finders.findFacePoints(image);
-  const features: AreaMaps = facePoints
-    ? faceFeatureAreas(
-        facePoints.map(([x, y]) => [x * width, y * height]),
+  const faces = finders.findFaces(image);
+  const features = combinedAreas(
+    faces.map((face) =>
+      faceFeatureAreas(
+        face.map(([x, y]) => [x * width, y * height]),
         width,
         height,
-      )
-    : {};
+      ),
+    ),
+  );
 
   const rest = newFloatImage(width, height);
   for (let i = 0; i < rest.data.length; i++) {
@@ -146,7 +149,24 @@ export function findAreas(image: RgbaImage, finders: PartFinders): { areas: Area
     skin: restOf(SEGMENTER_FACE_SKIN, SEGMENTER_BODY_SKIN),
     clothes: restOf(SEGMENTER_CLOTHES, SEGMENTER_OTHER),
   };
-  return { areas, faceFound: facePoints !== null };
+  return { areas, faceFound: faces.length > 0 };
+}
+
+function combinedAreas(areaGroups: AreaMaps[]): AreaMaps {
+  const combined: AreaMaps = {};
+  for (const areas of areaGroups) {
+    for (const [name, area] of Object.entries(areas) as [AreaName, FloatImage][]) {
+      const sofar = combined[name];
+      if (sofar === undefined) {
+        combined[name] = area;
+        continue;
+      }
+      for (let i = 0; i < area.data.length; i++) {
+        sofar.data[i] = Math.max(sofar.data[i], area.data[i]);
+      }
+    }
+  }
+  return combined;
 }
 
 export function faceFeatureAreas(points: [number, number][], width: number, height: number): AreaMaps {

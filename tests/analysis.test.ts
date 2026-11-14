@@ -19,7 +19,7 @@ function photoWithPersonBox(width: number, height: number, box: { left: number; 
   return photo;
 }
 
-function finderSeeingDarkPixelsAsPerson(facePoints: [number, number][] | null): PartFinders {
+function finderSeeingDarkPixelsAsPerson(faces: [number, number][][]): PartFinders {
   return {
     async findPerson(image) {
       const person = newFloatImage(image.width, image.height);
@@ -37,7 +37,7 @@ function finderSeeingDarkPixelsAsPerson(facePoints: [number, number][] | null): 
       }
       return parts;
     },
-    findFacePoints: () => facePoints,
+    findFaces: () => faces,
   };
 }
 
@@ -48,7 +48,7 @@ beforeAll(async () => {
 describe("analysis", () => {
   it("crops to the person", async () => {
     const photo = photoWithPersonBox(300, 200, { left: 100, top: 50, right: 160, bottom: 150 });
-    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson(null));
+    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson([]));
     expect([analysis.gray.width, analysis.gray.height]).toEqual([60, 100]);
     expect([analysis.person.width, analysis.person.height]).toEqual([60, 100]);
     expect(analysis.person.data[50 * 60 + 30]).toBe(1);
@@ -61,7 +61,7 @@ describe("analysis", () => {
         photo.data.fill(x - 100 + (y - 50), (y * 300 + x) * 4, (y * 300 + x) * 4 + 3);
       }
     }
-    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson(null));
+    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson([]));
     for (const [x, y] of [[0, 0], [59, 0], [0, 99], [17, 42]]) {
       expect(analysis.gray.data[y * 60 + x]).toBe(x + y);
     }
@@ -74,28 +74,28 @@ describe("analysis", () => {
         photo.data[(y * 100 + x) * 4 + 3] = 0;
       }
     }
-    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson(null));
+    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson([]));
     expect(analysis.person.width).toBe(30);
     expect(analysis.gray.data[0]).toBe(60);
   });
 
   it("uses the whole photo when no person is found", async () => {
     const photo = photoWithPersonBox(80, 40, { left: 0, top: 0, right: 0, bottom: 0 });
-    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson(null));
+    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson([]));
     expect([analysis.person.width, analysis.person.height]).toEqual([80, 40]);
     expect(analysis.person.data.every((value) => value === 1)).toBe(true);
   });
 
   it("says when no face is found", async () => {
     const photo = photoWithPersonBox(100, 100, { left: 20, top: 20, right: 80, bottom: 80 });
-    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson(null));
+    const analysis = await analyzePhoto(photo, finderSeeingDarkPixelsAsPerson([]));
     expect(analysis.message).toContain("No face found");
     expect(Object.keys(analysis.areas).sort()).toEqual(["clothes", "hair", "skin"]);
   });
 
   it("finds face areas that add up to at most 1, with features winning over skin", () => {
     const image = photoWithPersonBox(410, 512, { left: 0, top: 0, right: 410, bottom: 512 });
-    const { areas, faceFound } = findAreas(image, finderSeeingDarkPixelsAsPerson(FACE_POINTS));
+    const { areas, faceFound } = findAreas(image, finderSeeingDarkPixelsAsPerson([FACE_POINTS]));
     expect(faceFound).toBe(true);
     expect(Object.keys(areas).sort()).toEqual(
       ["clothes", "eyebrows", "eyes", "face_edge", "hair", "mouth", "nose", "skin"].sort(),

@@ -6,6 +6,7 @@ import type { ModelId } from "./models";
 import { resizeRgba } from "./opencv";
 
 const U2NET_SIZE = 320;
+const MOST_FACES = 10;
 const U2NET_MEAN = [0.485, 0.456, 0.406];
 const U2NET_STD = [0.229, 0.224, 0.225];
 
@@ -26,7 +27,7 @@ export async function createPartFinders(
   const faceLandmarker = await FaceLandmarker.createFromOptions(fileset, {
     baseOptions: { modelAssetBuffer: modelBytes.face_points, delegate: "CPU" },
     runningMode: "IMAGE",
-    numFaces: 1,
+    numFaces: MOST_FACES,
   });
   await restoreModuleFactory();
   const segmenter = await ImageSegmenter.createFromOptions(fileset, {
@@ -51,9 +52,9 @@ export async function createPartFinders(
       }
       return parts;
     },
-    findFacePoints(image) {
+    findFaces(image) {
       const faces = faceLandmarker.detect(asImageData(image)).faceLandmarks;
-      return faces.length > 0 ? faces[0].map((point) => [point.x, point.y]) : null;
+      return faces.map((face) => face.map((point) => [point.x, point.y]));
     },
   };
 }
