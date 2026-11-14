@@ -51,17 +51,11 @@ async function readPhoto(photo: Blob, crop: Crop | null): Promise<RgbaImage> {
   const whole = await createImageBitmap(photo, { imageOrientation: "from-image", premultiplyAlpha: "none" });
   const box = crop === null ? { left: 0, top: 0, width: whole.width, height: whole.height } : cropBoxInPixels(crop, whole.width, whole.height);
   const scale = Math.min(1, LARGEST_PHOTO_SIDE / Math.max(box.width, box.height));
-  const bitmap = await createImageBitmap(whole, box.left, box.top, box.width, box.height, {
-    resizeWidth: Math.max(1, Math.round(box.width * scale)),
-    resizeHeight: Math.max(1, Math.round(box.height * scale)),
-    resizeQuality: "high",
-    premultiplyAlpha: "none",
-  });
-  whole.close();
-  const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+  const canvas = new OffscreenCanvas(Math.max(1, Math.round(box.width * scale)), Math.max(1, Math.round(box.height * scale)));
   const context = canvas.getContext("2d")!;
-  context.drawImage(bitmap, 0, 0);
-  bitmap.close();
+  context.imageSmoothingQuality = "high";
+  context.drawImage(whole, box.left, box.top, box.width, box.height, 0, 0, canvas.width, canvas.height);
+  whole.close();
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
   return { width: pixels.width, height: pixels.height, data: pixels.data };
 }
