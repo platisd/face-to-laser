@@ -45,7 +45,14 @@ test("photo to laser files", async ({ page }) => {
   expect(download.suggestedFilename()).toMatch(/^testface_\d{8}-\d{6}\.zip$/);
   const zip = await JSZip.loadAsync(readFileSync(await download.path()));
   expect(Object.keys(zip.files).sort()).toEqual(
-    ["testface_combined.svg", "testface_cut.dxf", "testface_cut.svg", "testface_engrave.png", "testface_settings.json"],
+    [
+      "testface_combined.svg",
+      "testface_cut.dxf",
+      "testface_cut.svg",
+      "testface_engrave.png",
+      "testface_photo.png",
+      "testface_settings.json",
+    ],
   );
 });
 
@@ -79,9 +86,29 @@ test("crop the photo with a circle", async ({ page }) => {
   await expect(page.locator("#status")).toContainText("Cut piece:", { timeout: 120000 });
   await expect(page.locator("#export-button")).toBeEnabled();
 
+  await page.locator("#file-name").fill("round");
+  await page.getByRole("radio", { name: "stencil" }).check();
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export laser files" }).click();
+  const zipPath = await (await downloading).path();
+  const saved = JSON.parse(await (await JSZip.loadAsync(readFileSync(zipPath))).file("round_settings.json")!.async("string"));
+  expect(saved.crop.shape).toBe("circle");
+  expect(saved.file_name).toBe("round");
+
   await page.getByRole("radio", { name: "No crop" }).check();
   await expect(stage).toBeHidden();
   await expect(applyButton).toBeEnabled();
+
+  await page.reload();
+  await page.getByRole("button", { name: "Reset to defaults" }).click();
+  await page.locator("#file-name").fill("other");
+  await page.locator("#load-input").setInputFiles({ name: "round.zip", mimeType: "application/zip", buffer: readFileSync(zipPath) });
+  await expect(page.getByRole("radio", { name: "Circle" })).toBeChecked();
+  await expect(page.getByRole("radio", { name: "stencil" })).toBeChecked();
+  await expect(page.locator("#file-name")).toHaveValue("round");
+  await expect(stage).toBeVisible();
+  await expect(applyButton).toBeDisabled();
+  await expect(page.locator("#status")).toContainText("Cut piece:", { timeout: 120000 });
 });
 
 test("add a keychain holder and place it by clicking the preview", async ({ page }) => {

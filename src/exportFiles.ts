@@ -2,7 +2,7 @@ import JSZip from "jszip";
 import type { ByteImage, PointList } from "./images";
 import type { Circle } from "./keychain";
 import { BURN, type LaserJob } from "./laserJob";
-import { type Settings, settingsToJson } from "./settings";
+import { type SavedWork, photoFileName, savedWorkToJson } from "./savedWork";
 
 export const CUT_LINE_COLOR = "#ff0000";
 export const HOLE_LINE_COLOR = "#0000ff";
@@ -29,7 +29,12 @@ export interface LaserPiece {
   heightMm: number;
 }
 
-export async function makeLaserFiles(job: LaserJob, settings: Settings, name: string): Promise<LaserFile[]> {
+export async function makeLaserFiles(
+  job: LaserJob,
+  work: SavedWork,
+  name: string,
+  photo: Blob | null = null,
+): Promise<LaserFile[]> {
   const text = (value: string) => new TextEncoder().encode(value);
   const piece = trimToPiece(job);
   const engravePng = await engravePngBytes(piece);
@@ -41,7 +46,10 @@ export async function makeLaserFiles(job: LaserJob, settings: Settings, name: st
     files.push({ name: `${name}_cut.svg`, content: text(svgText(piece, null)) });
     files.push({ name: `${name}_cut.dxf`, content: text(dxfText(piece)) });
   }
-  files.push({ name: `${name}_settings.json`, content: text(settingsToJson(settings)) });
+  files.push({ name: `${name}_settings.json`, content: text(savedWorkToJson(work)) });
+  if (photo !== null) {
+    files.push({ name: photoFileName(name, photo), content: new Uint8Array(await photo.arrayBuffer()) });
+  }
   return files;
 }
 

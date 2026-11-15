@@ -2,13 +2,14 @@ import type { Crop } from "./crop";
 import type { PieceSize } from "./laserJob";
 import type { DownloadProgress } from "./models";
 import type { PreviewMode, RgbaPicture } from "./preview";
+import type { SavedWork } from "./savedWork";
 import type { Settings } from "./settings";
 
 export type MessageToWorker =
   | { kind: "loadModels" }
   | { kind: "photo"; photo: Blob; crop: Crop | null }
   | { kind: "preview"; requestId: number; settings: Settings; mode: PreviewMode; woodColors: boolean }
-  | { kind: "export"; requestId: number; settings: Settings; name: string };
+  | { kind: "export"; requestId: number; work: SavedWork; photo: Blob; name: string };
 
 export interface PreviewResult {
   picture: RgbaPicture;

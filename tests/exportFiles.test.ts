@@ -51,7 +51,7 @@ beforeAll(async () => {
 describe("export files", () => {
   it("writes all files with the right names", async () => {
     const { job, settings } = jobWith({});
-    const names = (await makeLaserFiles(job, settings, "face")).map((file) => file.name);
+    const names = (await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face")).map((file) => file.name);
     expect(names.sort()).toEqual(
       ["face_combined.svg", "face_cut.dxf", "face_cut.svg", "face_engrave.png", "face_settings.json"].sort(),
     );
@@ -59,14 +59,14 @@ describe("export files", () => {
 
   it("writes no cut files when the cut line is off", async () => {
     const { job, settings } = jobWith({ cut_line_on: false });
-    const names = (await makeLaserFiles(job, settings, "face")).map((file) => file.name);
+    const names = (await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face")).map((file) => file.name);
     expect(names.sort()).toEqual(["face_combined.svg", "face_engrave.png", "face_settings.json"]);
   });
 
   it("writes a gray PNG with a clear background and the dots per inch inside", async () => {
     const { job, settings } = jobWith({});
     const piece = trimToPiece(job);
-    const files = await makeLaserFiles(job, settings, "face");
+    const files = await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face");
     const chunks = readPngChunks(files.find((file) => file.name.endsWith(".png"))!.content);
     expect(chunks.map((chunk) => chunk.type)).toEqual(["IHDR", "pHYs", "IDAT", "IEND"]);
 
@@ -121,7 +121,7 @@ describe("export files", () => {
   it("writes an SVG with the size in mm and each part in its own layer", async () => {
     const { job, settings } = jobWith({});
     const piece = trimToPiece(job);
-    const files = await makeLaserFiles(job, settings, "face");
+    const files = await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face");
     const svg = new TextDecoder().decode(files.find((file) => file.name === "face_combined.svg")!.content);
     expect(svg).toContain(`width="${piece.widthMm.toFixed(3)}mm"`);
     expect(svg).toMatch(/<g id="engrave" [^>]*>\n<image [^>]*href="data:image\/png;base64,/);
@@ -133,7 +133,7 @@ describe("export files", () => {
   it("writes a DXF with one closed polyline in mm, y flipped", async () => {
     const { job, settings } = jobWith({});
     const piece = trimToPiece(job);
-    const files = await makeLaserFiles(job, settings, "face");
+    const files = await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face");
     const pairs = dxfPairs(new TextDecoder().decode(files.find((file) => file.name.endsWith(".dxf"))!.content));
     expect(pairs.filter(([code, value]) => code === "0" && value === "POLYLINE")).toHaveLength(1);
     const polylineAt = pairs.findIndex(([, value]) => value === "POLYLINE");
@@ -151,7 +151,7 @@ describe("export files", () => {
   it("writes the keychain hole as a blue circle in its own layer, before the outer cut line", async () => {
     const { job, settings } = jobWith({ keychain_on: true });
     const piece = trimToPiece(job);
-    const files = await makeLaserFiles(job, settings, "face");
+    const files = await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face");
     const read = (end: string) => new TextDecoder().decode(files.find((file) => file.name.endsWith(end))!.content);
     for (const svg of [read("_cut.svg"), read("_combined.svg")]) {
       expect(svg).toMatch(/<g id="cut-hole" [^>]*>\n<circle cx="[\d.]+" cy="[\d.]+" r="2.500" fill="none" stroke="#0000ff"/);
@@ -168,11 +168,18 @@ describe("export files", () => {
 
   it("puts all files in one zip, with settings that load again", async () => {
     const { job, settings } = jobWith({ look: "stencil" });
-    const files = await makeLaserFiles(job, settings, "face");
+    const files = await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face");
     const zip = await JSZip.loadAsync(await zipFiles(files));
     expect(Object.keys(zip.files).sort()).toEqual(files.map((file) => file.name).sort());
     const savedSettings = await zip.file("face_settings.json")!.async("string");
     expect(settingsFromJson(savedSettings)).toEqual(settings);
+  });
+
+  it("adds the photo unchanged when there is one", async () => {
+    const { job, settings } = jobWith({});
+    const photo = new Blob([new Uint8Array([4, 5, 6])], { type: "image/png" });
+    const files = await makeLaserFiles(job, { settings, crop: null, fileName: "face" }, "face", photo);
+    expect(files.find((file) => file.name === "face_photo.png")!.content).toEqual(new Uint8Array([4, 5, 6]));
   });
 
   it("makes a safe file name", () => {

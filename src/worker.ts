@@ -138,8 +138,8 @@ async function handle(message: MessageToWorker): Promise<void> {
       if (photo === null) {
         throw new Error("Upload a photo first.");
       }
-      const job = await laserJobFor(photo, message.settings);
-      const zip = await zipFiles(await makeLaserFiles(job, message.settings, message.name));
+      const job = await laserJobFor(photo, message.work.settings);
+      const zip = await zipFiles(await makeLaserFiles(job, message.work, message.name, message.photo));
       send({ kind: "exported", requestId: message.requestId, zip }, [zip.buffer]);
     }
   } catch (error) {

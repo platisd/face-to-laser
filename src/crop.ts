@@ -85,6 +85,15 @@ export function asPartOfPhoto(box: Box, photoWidth: number, photoHeight: number)
   };
 }
 
+export function fromPartOfPhoto(part: Box, photoWidth: number, photoHeight: number): Box {
+  return {
+    left: part.left * photoWidth,
+    top: part.top * photoHeight,
+    width: part.width * photoWidth,
+    height: part.height * photoHeight,
+  };
+}
+
 export function cropBoxInPixels(crop: Crop, photoWidth: number, photoHeight: number): Box {
   const part = crop.boxAsPartOfPhoto;
   const left = clamp(Math.round(part.left * photoWidth), 0, photoWidth - 1);

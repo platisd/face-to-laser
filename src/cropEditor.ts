@@ -6,6 +6,7 @@ import {
   type Point,
   asPartOfPhoto,
   boxForShape,
+  fromPartOfPhoto,
   keepsEqualSides,
   movedBox,
   resizedBox,
@@ -36,7 +37,8 @@ interface View {
 }
 
 export interface CropEditor {
-  showPhoto(url: string): void;
+  showPhoto(url: string, crop: Crop | null): void;
+  showCrop(crop: Crop | null): void;
 }
 
 function find<T extends HTMLElement>(id: string): T {
@@ -59,6 +61,7 @@ export function startCropEditor(useCrop: (crop: Crop | null) => void): CropEdito
   let view: View = { scale: 1, x: 0, y: 0 };
   let viewNeedsFit = true;
   let drag: Drag | null = null;
+  let cropAfterLoading: Crop | null = null;
 
   const radios = buildChoices(find<HTMLDivElement>("crop-shapes"), (chosen) => {
     choice = chosen;
@@ -75,8 +78,28 @@ export function startCropEditor(useCrop: (crop: Crop | null) => void): CropEdito
     return { shape: choice, boxAsPartOfPhoto: asPartOfPhoto(box, photo.naturalWidth, photo.naturalHeight) };
   }
 
+  function photoIsLoaded(): boolean {
+    return photo.complete && photo.naturalWidth > 0;
+  }
+
+  function showCropNow(crop: Crop | null): void {
+    choice = crop === null ? "none" : crop.shape;
+    box =
+      crop === null
+        ? null
+        : boxForShape(
+            fromPartOfPhoto(crop.boxAsPartOfPhoto, photo.naturalWidth, photo.naturalHeight),
+            crop.shape,
+            photo.naturalWidth,
+            photo.naturalHeight,
+          );
+    radios[choice].checked = true;
+    appliedCrop = JSON.stringify(currentCrop());
+    showParts();
+  }
+
   function showParts(): void {
-    const hasFrame = choice !== "none" && photo.complete && photo.naturalWidth > 0;
+    const hasFrame = choice !== "none" && photoIsLoaded();
     stage.hidden = !hasFrame;
     zoomButtons.hidden = !hasFrame;
     help.hidden = !hasFrame;
@@ -313,19 +336,28 @@ export function startCropEditor(useCrop: (crop: Crop | null) => void): CropEdito
 
   photo.addEventListener("load", () => {
     viewNeedsFit = true;
-    showParts();
+    showCropNow(cropAfterLoading);
+    cropAfterLoading = null;
   });
 
   return {
-    showPhoto(url: string): void {
+    showPhoto(url: string, crop: Crop | null): void {
       choice = "none";
       box = null;
       appliedCrop = "null";
       viewNeedsFit = true;
+      cropAfterLoading = crop;
       radios.none.checked = true;
       panel.hidden = false;
       photo.src = url;
       showParts();
+    },
+    showCrop(crop: Crop | null): void {
+      if (photoIsLoaded()) {
+        showCropNow(crop);
+      } else {
+        cropAfterLoading = crop;
+      }
     },
   };
 }

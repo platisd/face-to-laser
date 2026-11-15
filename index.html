@@ -56,8 +56,8 @@
         <div class="button-row">
           <button type="button" id="reset-button" title="Set all settings back to their first values">Reset to defaults</button>
           <button type="button" id="save-button" title="Download the settings as a .json file">Save settings</button>
-          <button type="button" id="load-button" title="Load settings from a .json file">Load settings</button>
-          <input type="file" accept=".json,application/json" id="load-input" hidden />
+          <button type="button" id="load-button" title="Load settings from a .json file, or everything from an exported .zip file">Load settings</button>
+          <input type="file" accept=".json,application/json,.zip,application/zip" id="load-input" hidden />
         </div>
         <p id="settings-message" class="message" role="status"></p>
 
@@ -98,8 +98,11 @@
             <dt>*_cut.svg, *_cut.dxf</dt>
             <dd>Only the cut lines, in red. Same size and position as the picture. With a keychain holder, the hole is cut first.</dd>
             <dt>*_settings.json</dt>
-            <dd>The settings used. Load it again with <b>Load settings</b>.</dd>
+            <dd>The settings used, with the crop and the file name.</dd>
+            <dt>*_photo.*</dt>
+            <dd>The photo you started from.</dd>
           </dl>
+          <p>To continue later, load the whole .zip file with <b>Load settings</b>. It brings back the photo, the crop and all settings.</p>
           <p>In Falcon Design Space: set the picture to <b>engrave</b> and the red line to <b>cut</b>. The speed and power for your material are set there, not here.</p>
         </details>
       </section>

@@ -17,7 +17,8 @@ import { drawPictureWithRulers, rulerSizeFor } from "./rulers";
 import { angleTowards } from "./keychain";
 import { PREVIEW_MODES, PREVIEW_RESULT, type PreviewMode } from "./preview";
 import { loadRememberedSettings, rememberSettings } from "./rememberedSettings";
-import { defaultSettings, settingsFromJson, settingsToJson } from "./settings";
+import { type LoadedWork, savedWorkFromJson, savedWorkFromZip, savedWorkToJson } from "./savedWork";
+import { defaultSettings } from "./settings";
 import type { MessageFromWorker, MessageToWorker, PreviewResult } from "./workerMessages";
 
 interface ShownControl {
@@ -144,13 +145,13 @@ export function startApp(): void {
     );
   }
 
-  function choosePhoto(photo: Blob): void {
+  function choosePhoto(photo: Blob, crop: Crop | null = null): void {
     if (!photo.type.startsWith("image/")) {
       showStatus("This file is not a picture.", true);
       return;
     }
     latestPhoto = photo;
-    latestCrop = null;
+    latestCrop = crop;
     const thumb = find<HTMLImageElement>("photo-thumb");
     if (thumb.src) {
       URL.revokeObjectURL(thumb.src);
@@ -158,7 +159,7 @@ export function startApp(): void {
     thumb.src = URL.createObjectURL(photo);
     thumb.hidden = false;
     find<HTMLSpanElement>("photo-drop-text").textContent = "Choose another photo, drop it here, or paste it.";
-    cropEditor.showPhoto(thumb.src);
+    cropEditor.showPhoto(thumb.src, crop);
     analyzeLatestPhoto();
   }
 
@@ -243,12 +244,16 @@ export function startApp(): void {
   let exportRequestId = -1;
   const fileName = find<HTMLInputElement>("file-name");
   const exportFileName = () => `${safeFileName(fileName.value)}_${timestamp()}.zip`;
+  const currentWork = () => ({ settings, crop: latestCrop, fileName: fileName.value });
   exportButton.addEventListener("click", () => {
+    if (latestPhoto === null) {
+      return;
+    }
     latestRequestId++;
     exportRequestId = latestRequestId;
     exportButton.disabled = true;
     showMessage(exportMessage, "Making the laser files…");
-    send({ kind: "export", requestId: exportRequestId, settings, name: safeFileName(fileName.value) });
+    send({ kind: "export", requestId: exportRequestId, work: currentWork(), photo: latestPhoto, name: safeFileName(fileName.value) });
   });
 
   connectPhotoInput(choosePhoto);
@@ -259,7 +264,7 @@ export function startApp(): void {
     settingsChanged();
   });
   find<HTMLButtonElement>("save-button").addEventListener("click", () => {
-    downloadFile(new Blob([settingsToJson(settings)], { type: "application/json" }), "laser_settings.json");
+    downloadFile(new Blob([savedWorkToJson(currentWork())], { type: "application/json" }), "laser_settings.json");
   });
   const loadInput = find<HTMLInputElement>("load-input");
   find<HTMLButtonElement>("load-button").addEventListener("click", () => loadInput.click());
@@ -270,13 +275,28 @@ export function startApp(): void {
       return;
     }
     try {
-      settings = settingsFromJson(await file.text());
+      const isZip = file.name.toLowerCase().endsWith(".zip") || file.type.includes("zip");
+      useLoadedWork(isZip ? await savedWorkFromZip(file) : savedWorkFromJson(await file.text()));
       showMessage(settingsMessage, `Loaded ${file.name}.`);
-      settingsChanged();
     } catch (error) {
       showMessage(settingsMessage, `Could not read the settings file: ${(error as Error).message}`, true);
     }
   });
+
+  function useLoadedWork(work: LoadedWork): void {
+    settings = work.settings;
+    if (work.fileName !== undefined) {
+      fileName.value = work.fileName;
+    }
+    if (work.photo !== undefined) {
+      choosePhoto(work.photo, work.crop ?? null);
+    } else if (work.crop !== undefined && latestPhoto !== null && JSON.stringify(work.crop) !== JSON.stringify(latestCrop)) {
+      latestCrop = work.crop;
+      cropEditor.showCrop(work.crop);
+      analyzeLatestPhoto();
+    }
+    settingsChanged();
+  }
 
   settingsChanged();
   showModelProgress();
